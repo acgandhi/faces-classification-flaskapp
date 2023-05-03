@@ -13,6 +13,9 @@ class UploadForm(FlaskForm):
 
 
 model = tf.keras.saving.load_model('./model')
+# rescaling: [0, 255] -> [0, 1]
+# resizing: n x n x 3 -> 384 x 384 x 3
+# layers must be in this order to work!
 preprocessing = tf.keras.Sequential([
     tf.keras.layers.Rescaling(scale=1./255),
     tf.keras.layers.Resizing(384, 384),
@@ -26,7 +29,6 @@ app.config['SECRET_KEY'] = token_urlsafe(10)
 def load_image(filename):
     raw = tf.io.read_file(filename)
     image = tf.image.decode_image(raw, channels=3)
-    # the `print` executes during tracing.
     print("Initial shape: ", image.shape)
     processed_image = preprocessing(image)
     print("Final shape", processed_image.shape)
@@ -34,13 +36,16 @@ def load_image(filename):
 
 
 @app.route('/', methods=['GET', 'POST'])
-def index():  # put application's code here
+def index():
     form = UploadForm()
     
     if form.validate_on_submit():
+        # save image to disk in 'static' dir so we can serve later
         filename = "static/" + secure_filename(form.file.data.filename)
         form.file.data.save(filename)
+        # load image as tensor
         image = load_image(filename)
+        # expand from (384, 384, 3) -> (1, 384, 384, 3) and run inference
         prediction = model(np.expand_dims(image, axis=0)).numpy()
         prediction_index = np.argmax(prediction)
         result = {
@@ -55,4 +60,5 @@ def index():  # put application's code here
 
 
 if __name__ == '__main__':
+    # host 0.0.0.0 needed for docker
     app.run(debug=True, port=5000, host='0.0.0.0')
