@@ -4,5 +4,11 @@ services:
   app:
     build: .
     restart: always
-    ports:
-      - "5000:8090"
+    networks:
+      cloudflared-net:
+        aliases:
+          - cs4200-app
+
+networks:
+  cloudflared-net:
+    external: true
