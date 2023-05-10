@@ -4,11 +4,6 @@ services:
   app:
     build: .
     restart: always
-    networks:
-      cloudflared-net:
-        aliases:
-          - cs4200-app
-
-networks:
-  cloudflared-net:
-    external: true
+    # expose 5000 from container to 5000 on host
+    ports:
+      - "5000:5000"

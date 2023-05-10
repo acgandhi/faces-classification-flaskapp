@@ -1,0 +1,14 @@
+version: '3.2'
+
+services:
+  app:
+    build: .
+    restart: always
+    networks:
+      cloudflared-net:
+        aliases:
+          - cs4200-app
+
+networks:
+  cloudflared-net:
+    external: true
